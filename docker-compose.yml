@@ -1,27 +1,23 @@
 services:
   postgres:
     image: postgres:15
-    restart: unless-stopped
+    restart: always
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-nexus}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-nexus_prod_2026}
       POSTGRES_DB: ${POSTGRES_DB:-nexus_eam}
-    ports:
-      - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-nexus} -d ${POSTGRES_DB:-nexus_eam}"]
+      test: ["CMD-SHELL", "pg_isready -U nexus -d nexus_eam"]
       interval: 10s
       timeout: 5s
       retries: 5
 
   redis:
     image: redis:7-alpine
-    restart: unless-stopped
-    ports:
-      - "6379:6379"
+    restart: always
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -32,35 +28,35 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile.prod
-    restart: unless-stopped
+    restart: always
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
+    volumes:
+      - uploads:/app/uploads
     environment:
-      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-nexus}:${POSTGRES_PASSWORD:-password}@postgres:5432/${POSTGRES_DB:-nexus_eam}
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-nexus}:${POSTGRES_PASSWORD:-nexus_prod_2026}@postgres:5432/${POSTGRES_DB:-nexus_eam}
       REDIS_URL: redis://redis:6379
       SECRET_KEY: ${SECRET_KEY:-change-me-in-production}
       ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-10080}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost}
-    ports:
-      - "8000:8000"
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
       interval: 15s
       timeout: 5s
       retries: 3
-      start_period: 10s
+      start_period: 15s
 
   frontend:
     build: ./frontend
-    restart: unless-stopped
+    restart: always
     depends_on:
       backend:
         condition: service_healthy
     ports:
-      - "80:80"
+      - "${WEB_PORT:-80}:80"
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://localhost:80"]
       interval: 15s
@@ -69,3 +65,4 @@ services:
 
 volumes:
   pgdata:
+  uploads:
