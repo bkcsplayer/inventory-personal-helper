@@ -52,3 +52,16 @@ export async function moveItem(id: string, container_id?: string, parent_item_id
   const { data } = await api.patch<Item>(`/items/${id}/move`, { container_id, parent_item_id });
   return data;
 }
+
+export async function uploadItemImage(itemId: string, file: File) {
+  const formData = new FormData();
+  formData.append("file", file);
+  const { data } = await api.post<{ image_url: string }>(`/uploads/image/${itemId}`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return data;
+}
+
+export async function deleteItemImage(itemId: string) {
+  await api.delete(`/uploads/image/${itemId}`);
+}

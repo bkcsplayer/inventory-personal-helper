@@ -39,6 +39,7 @@ export interface Item {
   attributes: Record<string, unknown>;
   restock_url?: string;
   barcode?: string;
+  image_url?: string;
   created_at: string;
   updated_at: string;
 }

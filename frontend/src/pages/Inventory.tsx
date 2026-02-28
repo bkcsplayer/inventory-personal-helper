@@ -29,11 +29,12 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { useInventoryStore } from "@/stores/inventoryStore";
-import { createItem } from "@/services/items";
+import { createItem, uploadItemImage } from "@/services/items";
 import { QuickAdjust } from "@/components/inventory/QuickAdjust";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { fmtQty } from "@/lib/format";
+import { ItemThumbnail, ImageLightbox } from "@/components/ui/image-lightbox";
 import type { Item } from "@/types";
 
 const STATUSES = [
@@ -155,8 +156,12 @@ export default function Inventory() {
   const [filterCategoryInput, setFilterCategoryInput] = useState(filters.category ?? "");
   const [addOpen, setAddOpen] = useState(false);
   const [addForm, setAddForm] = useState<AddFormState>({ ...EMPTY_FORM });
+  const [pendingImage, setPendingImage] = useState<File | null>(null);
+  const [pendingPreview, setPendingPreview] = useState<string | null>(null);
+  const pendingFileRef = useRef<HTMLInputElement>(null);
   const [allCategories, setAllCategories] = useState<string[]>(loadCategories);
   const [categoryInput, setCategoryInput] = useState("");
+  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
 
   const debouncedSearch = useDebouncedCallback((value: string) => {
     setFilter({ search: value || undefined });
@@ -224,9 +229,16 @@ export default function Inventory() {
       if (addForm.location_note.trim()) {
         payload.location_note = addForm.location_note.trim();
       }
-      await createItem(payload);
+      const created = await createItem(payload);
+      if (pendingImage && created.id) {
+        try {
+          await uploadItemImage(created.id, pendingImage);
+        } catch { /* image upload failed, item still created */ }
+      }
       setAddOpen(false);
       setAddForm({ ...EMPTY_FORM });
+      setPendingImage(null);
+      setPendingPreview(null);
       setCategoryInput("");
       await fetchItems();
       toast({ title: "Item created" });
@@ -310,14 +322,53 @@ export default function Inventory() {
               <DialogTitle>{t("item.createTitle", "Create New Item")}</DialogTitle>
             </DialogHeader>
             <div className="grid gap-4 py-4">
-              {/* Name */}
-              <div className="grid gap-2">
-                <Label>{t("item.name")}</Label>
-                <Input
-                  value={addForm.name}
-                  onChange={(e) => setAddForm((p) => ({ ...p, name: e.target.value }))}
-                  placeholder={t("item.name")}
-                />
+              {/* Name + Image */}
+              <div className="flex gap-4">
+                <div className="grid flex-1 gap-2">
+                  <Label>{t("item.name")}</Label>
+                  <Input
+                    value={addForm.name}
+                    onChange={(e) => setAddForm((p) => ({ ...p, name: e.target.value }))}
+                    placeholder={t("item.name")}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label>图片</Label>
+                  <input
+                    ref={pendingFileRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) {
+                        setPendingImage(f);
+                        setPendingPreview(URL.createObjectURL(f));
+                      }
+                    }}
+                  />
+                  {pendingPreview ? (
+                    <div className="relative">
+                      <img src={pendingPreview} alt="" className="h-16 w-16 rounded-lg border object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => { setPendingImage(null); setPendingPreview(null); if (pendingFileRef.current) pendingFileRef.current.value = ""; }}
+                        className="absolute -right-1.5 -top-1.5 rounded-full bg-destructive p-0.5 text-white"
+                      >
+                        <span className="block h-3 w-3 text-center text-[10px] leading-3">&times;</span>
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => pendingFileRef.current?.click()}
+                      className="flex h-16 w-16 flex-col items-center justify-center gap-0.5 rounded-lg border-2 border-dashed text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+                    >
+                      <Plus className="h-4 w-4" />
+                      <span className="text-[10px]">图片</span>
+                    </button>
+                  )}
+                </div>
               </div>
 
               {/* Category tag selector */}
@@ -489,6 +540,7 @@ export default function Inventory() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-[50px]"></TableHead>
                 <TableHead>{t("item.name")}</TableHead>
                 <TableHead>{t("inventory.category")}</TableHead>
                 <TableHead>{t("inventory.type")}</TableHead>
@@ -500,13 +552,22 @@ export default function Inventory() {
             <TableBody>
               {items.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center text-muted-foreground">
+                  <TableCell colSpan={7} className="text-center text-muted-foreground">
                     {t("common.noData")}
                   </TableCell>
                 </TableRow>
               ) : (
                 items.map((item) => (
                   <TableRow key={item.id}>
+                    <TableCell className="p-2">
+                      <button
+                        type="button"
+                        className="block cursor-pointer"
+                        onClick={() => item.image_url && setLightboxSrc(item.image_url)}
+                      >
+                        <ItemThumbnail src={item.image_url} alt={item.name} size={40} />
+                      </button>
+                    </TableCell>
                     <TableCell className="font-medium">{item.name}</TableCell>
                     <TableCell>{item.category ?? "-"}</TableCell>
                     <TableCell>{t(`inventory.${item.item_type}`)}</TableCell>
@@ -581,6 +642,12 @@ export default function Inventory() {
           </Button>
         </div>
       </div>
+
+      <ImageLightbox
+        src={lightboxSrc ?? ""}
+        open={!!lightboxSrc}
+        onClose={() => setLightboxSrc(null)}
+      />
     </div>
   );
 }

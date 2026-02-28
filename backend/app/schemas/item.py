@@ -23,6 +23,7 @@ class ItemCreate(BaseModel):
     attributes: dict = Field(default_factory=dict)
     restock_url: str | None = None
     barcode: str | None = None
+    image_url: str | None = None
 
 
 class ItemUpdate(BaseModel):
@@ -42,6 +43,7 @@ class ItemUpdate(BaseModel):
     attributes: dict | None = None
     restock_url: str | None = None
     barcode: str | None = None
+    image_url: str | None = None
 
 
 class ItemResponse(BaseModel):
@@ -63,6 +65,7 @@ class ItemResponse(BaseModel):
     attributes: dict
     restock_url: str | None
     barcode: str | None
+    image_url: str | None
     created_at: datetime
     updated_at: datetime
 

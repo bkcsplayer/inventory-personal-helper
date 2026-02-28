@@ -42,6 +42,7 @@ services:
       - ./backend/app:/app/app
       - ./backend/alembic:/app/alembic
       - ./backend/alembic.ini:/app/alembic.ini
+      - uploads_dev:/app/uploads
     environment:
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-nexus}:${POSTGRES_PASSWORD:-nexus_dev_2026}@postgres:5432/${POSTGRES_DB:-nexus_eam}
       REDIS_URL: redis://redis:6379
@@ -71,3 +72,4 @@ services:
 
 volumes:
   pgdata_dev:
+  uploads_dev:

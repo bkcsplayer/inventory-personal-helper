@@ -47,6 +47,7 @@ class Item(Base):
 
     attributes: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
 
+    image_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     restock_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     barcode: Mapped[str | None] = mapped_column(String(100), unique=True, nullable=True, index=True)
 

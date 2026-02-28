@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from app.api.v1.endpoints import auth, containers, items, reports, scan, topology
+from app.api.v1.endpoints import auth, containers, items, reports, scan, topology, uploads
 
 api_router = APIRouter()
 
@@ -10,3 +10,4 @@ api_router.include_router(containers.router, prefix="/containers", tags=["contai
 api_router.include_router(topology.router, prefix="/topology", tags=["topology"])
 api_router.include_router(scan.router, prefix="/scan", tags=["scan"])
 api_router.include_router(reports.router, prefix="/reports", tags=["reports"])
+api_router.include_router(uploads.router, prefix="/uploads", tags=["uploads"])

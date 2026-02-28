@@ -59,6 +59,7 @@ CREATE TABLE IF NOT EXISTS items (
     status VARCHAR(20) NOT NULL DEFAULT 'in_stock',
     assigned_to VARCHAR(255),
     attributes JSONB NOT NULL DEFAULT '{}',
+    image_url VARCHAR(500),
     restock_url TEXT,
     barcode VARCHAR(100) UNIQUE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
