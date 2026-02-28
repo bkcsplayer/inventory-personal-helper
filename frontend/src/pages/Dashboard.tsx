@@ -1,17 +1,14 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  PieChart,
-  Pie,
-  Cell,
   Tooltip,
-  Legend,
   ResponsiveContainer,
   BarChart,
   Bar,
   XAxis,
   YAxis,
   CartesianGrid,
+  Cell,
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -114,11 +111,12 @@ export default function Dashboard() {
   const typeCount =
     summary?.by_type != null ? Object.keys(summary.by_type).length : 0;
 
-  const pieData =
+  const categoryBarData =
     summary != null
       ? Object.entries(summary.by_category ?? {})
           .filter(([key]) => key != null && key !== "null" && key !== "")
-          .map(([name, value]) => ({ name, value }))
+          .map(([name, value]) => ({ name, count: value }))
+          .sort((a, b) => b.count - a.count)
       : [];
 
   const statusBarData = STATUS_ORDER.map((status) => ({
@@ -208,42 +206,31 @@ export default function Dashboard() {
             <CardTitle>{t("dashboard.byCategory")}</CardTitle>
           </CardHeader>
           <CardContent>
-            {pieData.length === 0 ? (
+            {categoryBarData.length === 0 ? (
               <p className="py-12 text-center text-sm text-muted-foreground">
                 {t("common.noData")}
               </p>
             ) : (
-              <div className="h-[300px]">
+              <div style={{ height: Math.max(200, categoryBarData.length * 36 + 40) }}>
                 <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={pieData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={60}
-                      outerRadius={90}
-                      paddingAngle={2}
-                      dataKey="value"
-                      label={({ name, value }) =>
-                        `${name}: ${fmtQty(value)}`
-                      }
-                    >
-                      {pieData.map((_, index) => (
-                        <Cell
-                          key={index}
-                          fill={CHART_COLORS[index % CHART_COLORS.length]}
-                        />
-                      ))}
-                    </Pie>
+                  <BarChart
+                    data={categoryBarData}
+                    layout="vertical"
+                    margin={{ top: 5, right: 30, left: 10, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" horizontal={false} className="stroke-muted/50" />
+                    <XAxis type="number" tickFormatter={(v) => fmtQty(v)} />
+                    <YAxis type="category" dataKey="name" width={100} tick={{ fontSize: 13 }} />
                     <Tooltip
-                      formatter={(value: number) => fmtQty(value)}
+                      formatter={(value: number) => [fmtQty(value), t("inventory.quantity")]}
+                      contentStyle={{ background: "white", color: "black", borderRadius: 8 }}
                     />
-                    <Legend
-                      formatter={(value, entry) =>
-                        `${value}: ${fmtQty((entry.payload as { value: number }).value)}`
-                      }
-                    />
-                  </PieChart>
+                    <Bar dataKey="count" radius={[0, 6, 6, 0]} barSize={22}>
+                      {categoryBarData.map((_, index) => (
+                        <Cell key={index} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                      ))}
+                    </Bar>
+                  </BarChart>
                 </ResponsiveContainer>
               </div>
             )}
