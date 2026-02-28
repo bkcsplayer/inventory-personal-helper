@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { Search, Plus, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, Plus, ChevronLeft, ChevronRight, Pencil, Trash2 } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -29,7 +29,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { useInventoryStore } from "@/stores/inventoryStore";
-import { createItem, uploadItemImage } from "@/services/items";
+import { createItem, updateItem, deleteItem, uploadItemImage } from "@/services/items";
 import { QuickAdjust } from "@/components/inventory/QuickAdjust";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
@@ -162,6 +162,11 @@ export default function Inventory() {
   const [allCategories, setAllCategories] = useState<string[]>(loadCategories);
   const [categoryInput, setCategoryInput] = useState("");
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
+  const [editItem, setEditItem] = useState<Item | null>(null);
+  const [editForm, setEditForm] = useState<AddFormState>({ ...EMPTY_FORM });
+  const [editImage, setEditImage] = useState<File | null>(null);
+  const [editPreview, setEditPreview] = useState<string | null>(null);
+  const editFileRef = useRef<HTMLInputElement>(null);
 
   const debouncedSearch = useDebouncedCallback((value: string) => {
     setFilter({ search: value || undefined });
@@ -197,6 +202,67 @@ export default function Inventory() {
       saveCategories(updated);
     }
     setCategoryInput("");
+  };
+
+  const openEdit = (item: Item) => {
+    setEditItem(item);
+    setEditForm({
+      name: item.name,
+      category: item.category,
+      item_type: item.item_type,
+      quantity: item.quantity,
+      unit: item.unit,
+      min_stock: item.min_stock ?? 0,
+      unit_price: item.unit_price?.toString() ?? "",
+      status: item.status,
+      barcode: item.barcode ?? "",
+      location_note: item.location_note ?? "",
+    });
+    setEditPreview(item.image_url || null);
+    setEditImage(null);
+  };
+
+  const handleEditItem = async () => {
+    if (!editItem) return;
+    try {
+      const payload: Record<string, unknown> = {};
+      if (editForm.name.trim() !== editItem.name) payload.name = editForm.name.trim();
+      if (editForm.category.trim() !== editItem.category) payload.category = editForm.category.trim();
+      if (editForm.status !== editItem.status) payload.status = editForm.status;
+      if (editForm.quantity !== editItem.quantity) payload.quantity = editForm.quantity;
+      if (editForm.unit !== editItem.unit) payload.unit = editForm.unit;
+      if (editForm.barcode.trim() !== (editItem.barcode ?? "")) payload.barcode = editForm.barcode.trim() || null;
+      if (editForm.location_note.trim() !== (editItem.location_note ?? "")) payload.location_note = editForm.location_note.trim() || null;
+      const price = editForm.unit_price ? parseFloat(editForm.unit_price) : null;
+      if (price !== (editItem.unit_price ?? null)) payload.unit_price = price;
+      const ms = editForm.item_type === "consumable" && editForm.min_stock > 0 ? editForm.min_stock : null;
+      if (ms !== (editItem.min_stock ?? null)) payload.min_stock = ms;
+
+      if (Object.keys(payload).length > 0) {
+        await updateItem(editItem.id, payload as Partial<Item>);
+      }
+      if (editImage) {
+        await uploadItemImage(editItem.id, editImage);
+      }
+      setEditItem(null);
+      setEditImage(null);
+      setEditPreview(null);
+      await fetchItems();
+      toast({ title: "Item updated" });
+    } catch {
+      toast({ title: "Failed to update item", variant: "destructive" });
+    }
+  };
+
+  const handleDeleteItem = async (item: Item) => {
+    if (!window.confirm(`确定删除 "${item.name}"？此操作不可撤销。`)) return;
+    try {
+      await deleteItem(item.id);
+      await fetchItems();
+      toast({ title: "Item deleted" });
+    } catch {
+      toast({ title: "Failed to delete item", variant: "destructive" });
+    }
   };
 
   const handleAddItem = async () => {
@@ -589,9 +655,14 @@ export default function Inventory() {
                       <StatusBadge status={item.status} />
                     </TableCell>
                     <TableCell>
-                      <Button variant="ghost" size="sm">
-                        {t("common.edit")}
-                      </Button>
+                      <div className="flex gap-1">
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(item)}>
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => handleDeleteItem(item)}>
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))
@@ -642,6 +713,92 @@ export default function Inventory() {
           </Button>
         </div>
       </div>
+
+      <Dialog open={!!editItem} onOpenChange={(open) => { if (!open) { setEditItem(null); setEditImage(null); setEditPreview(null); } }}>
+        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>编辑物品</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="flex gap-4">
+              <div className="grid flex-1 gap-2">
+                <Label>{t("item.name")}</Label>
+                <Input value={editForm.name} onChange={(e) => setEditForm((p) => ({ ...p, name: e.target.value }))} />
+              </div>
+              <div className="grid gap-2">
+                <Label>图片</Label>
+                <input ref={editFileRef} type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) { setEditImage(f); setEditPreview(URL.createObjectURL(f)); } }} />
+                {editPreview ? (
+                  <div className="relative">
+                    <img src={editPreview} alt="" className="h-16 w-16 rounded-lg border object-cover" />
+                    <button type="button" onClick={() => { setEditImage(null); setEditPreview(null); if (editFileRef.current) editFileRef.current.value = ""; }} className="absolute -right-1.5 -top-1.5 rounded-full bg-destructive p-0.5 text-white">
+                      <span className="block h-3 w-3 text-center text-[10px] leading-3">&times;</span>
+                    </button>
+                  </div>
+                ) : (
+                  <button type="button" onClick={() => editFileRef.current?.click()} className="flex h-16 w-16 flex-col items-center justify-center gap-0.5 rounded-lg border-2 border-dashed text-muted-foreground transition-colors hover:border-primary hover:text-primary">
+                    <Plus className="h-4 w-4" /><span className="text-[10px]">图片</span>
+                  </button>
+                )}
+              </div>
+            </div>
+            <div className="grid gap-2">
+              <Label>{t("inventory.category")}</Label>
+              <div className="flex flex-wrap gap-1.5">
+                {allCategories.map((cat) => (
+                  <button key={cat} type="button" onClick={() => setEditForm(prev => ({ ...prev, category: cat }))} className={cn("rounded-full px-3 py-1 text-xs font-medium border transition-colors", editForm.category === cat ? "bg-primary text-primary-foreground border-primary" : "bg-secondary/50 text-secondary-foreground border-border hover:bg-secondary")}>{cat}</button>
+                ))}
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label>{t("inventory.status")}</Label>
+                <Select value={editForm.status} onValueChange={(v) => setEditForm((p) => ({ ...p, status: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{STATUSES.map((s) => (<SelectItem key={s} value={s}>{t(`status.${s}`)}</SelectItem>))}</SelectContent>
+                </Select>
+              </div>
+              <div className="grid gap-2">
+                <Label>{t("item.unit")}</Label>
+                <Select value={editForm.unit} onValueChange={(v) => setEditForm((p) => ({ ...p, unit: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{UNIT_OPTIONS.map((u) => (<SelectItem key={u} value={u}>{u}</SelectItem>))}</SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label>{t("inventory.quantity")}</Label>
+                <Input type="number" min={0} value={editForm.quantity} onChange={(e) => setEditForm((p) => ({ ...p, quantity: Number(e.target.value) || 0 }))} />
+              </div>
+              <div className="grid gap-2">
+                <Label>{t("item.unitPrice")}</Label>
+                <Input type="number" min={0} step="0.01" value={editForm.unit_price} onChange={(e) => setEditForm((p) => ({ ...p, unit_price: e.target.value }))} placeholder="0.00" />
+              </div>
+            </div>
+            {editForm.item_type === "consumable" && (
+              <div className="grid gap-2">
+                <Label>{t("item.minStock")}</Label>
+                <Input type="number" min={0} value={editForm.min_stock} onChange={(e) => setEditForm((p) => ({ ...p, min_stock: Number(e.target.value) || 0 }))} />
+              </div>
+            )}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label>{t("item.barcode")}</Label>
+                <Input value={editForm.barcode} onChange={(e) => setEditForm((p) => ({ ...p, barcode: e.target.value }))} />
+              </div>
+              <div className="grid gap-2">
+                <Label>Location</Label>
+                <Input value={editForm.location_note} onChange={(e) => setEditForm((p) => ({ ...p, location_note: e.target.value }))} />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditItem(null)}>{t("common.cancel")}</Button>
+            <Button onClick={handleEditItem}>{t("common.save")}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <ImageLightbox
         src={lightboxSrc ?? ""}
