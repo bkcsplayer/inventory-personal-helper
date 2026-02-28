@@ -1,0 +1,104 @@
+{
+  "app": {
+    "title": "Nexus EAM"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "inventory": "Inventory",
+    "assets": "Assets",
+    "containers": "Containers",
+    "reports": "Reports",
+    "scan": "Scan",
+    "login": "Login",
+    "logout": "Logout"
+  },
+  "dashboard": {
+    "totalValue": "Total Asset Value",
+    "totalItems": "Total Items",
+    "lowStock": "Low Stock Alerts",
+    "idleAssets": "Idle Assets",
+    "loanedAssets": "Loaned Assets",
+    "byCategory": "By Category"
+  },
+  "inventory": {
+    "title": "Inventory Management",
+    "search": "Search items...",
+    "addItem": "Add Item",
+    "type": "Type",
+    "category": "Category",
+    "status": "Status",
+    "quantity": "Quantity",
+    "allTypes": "All Types",
+    "consumable": "Consumable",
+    "asset": "Asset",
+    "allStatuses": "All Statuses",
+    "page": "Page",
+    "pageSize": "Per page",
+    "prev": "Previous",
+    "next": "Next"
+  },
+  "item": {
+    "name": "Name",
+    "sku": "SKU",
+    "unit": "Unit",
+    "unitPrice": "Unit Price",
+    "minStock": "Min Stock",
+    "location": "Location",
+    "assignedTo": "Assigned To",
+    "barcode": "Barcode",
+    "purchaseDate": "Purchase Date",
+    "attributes": "Attributes",
+    "restockUrl": "Restock URL",
+    "createTitle": "Create New Item",
+    "itemType": "Item Type"
+  },
+  "container": {
+    "title": "Containers",
+    "addContainer": "Add Container",
+    "name": "Name",
+    "location": "Location",
+    "qrCode": "QR Code",
+    "items": "Items Inside",
+    "empty": "Empty container"
+  },
+  "status": {
+    "in_stock": "In Stock",
+    "in_service": "In Service",
+    "idle": "Idle",
+    "loaned": "Loaned",
+    "damaged": "Damaged",
+    "retired": "Retired"
+  },
+  "reports": {
+    "title": "Reports",
+    "lowStock": "Low Stock",
+    "idle": "Idle Assets",
+    "loaned": "Loaned",
+    "summary": "Summary"
+  },
+  "auth": {
+    "login": "Login",
+    "username": "Username",
+    "password": "Password",
+    "loginFailed": "Login failed",
+    "register": "Register",
+    "email": "Email"
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "actions": "Actions",
+    "loading": "Loading...",
+    "noData": "No data",
+    "confirm": "Confirm"
+  },
+  "assets": {
+    "title": "Fixed Assets",
+    "filterCategory": "Category",
+    "filterStatus": "Status",
+    "expandTopology": "Expand topology",
+    "collapseTopology": "Collapse topology"
+  }
+}
