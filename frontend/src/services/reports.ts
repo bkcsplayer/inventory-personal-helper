@@ -6,6 +6,7 @@ export interface SummaryData {
   total_value: number;
   by_category: Record<string, number>;
   by_type: Record<string, number>;
+  by_status?: Record<string, number>;
 }
 
 export async function getLowStock() {

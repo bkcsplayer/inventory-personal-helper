@@ -115,3 +115,65 @@ VALUES
     ('Antminer S19 Pro', 'asset', '矿机', 1, '个', 2500.00,
      'in_service', '{"hashrate":"110TH/s","algorithm":"SHA-256","psu_w":3250,"serial":"ANT-S19P-001"}', 'MINER-S19P-001', 'MINER-S19P-001')
 ON CONFLICT (barcode) DO NOTHING;
+
+-- Additional mock data for testing UI
+INSERT INTO containers (id, name, description, location, qr_code_id)
+VALUES
+    ('a0000000-0000-0000-0000-000000000004', 'GPU矿机专用柜 (mock)', '矿机和GPU设备', 'Torrington仓库-货架1', 'CTN-004'),
+    ('a0000000-0000-0000-0000-000000000005', '太阳能安装物料箱 (mock)', '太阳能板安装配件', 'Toyota Tundra后备箱-左侧', 'CTN-005'),
+    ('a0000000-0000-0000-0000-000000000006', '电子元器件收纳盒 (mock)', '各类SMD元器件', 'Torrington仓库-货架3-第2层', 'CTN-006')
+ON CONFLICT (qr_code_id) DO NOTHING;
+
+INSERT INTO items (name, item_type, category, container_id, quantity, unit, min_stock, unit_price, status, attributes, barcode, assigned_to, location_note)
+VALUES
+    ('红色PETG耗材 1kg (mock)', 'consumable', '3D耗材',
+     'a0000000-0000-0000-0000-000000000001', 3, '卷', 2, 32.99,
+     'in_stock', '{"material":"PETG","color":"red","diameter_mm":1.75,"weight_kg":1.0}', 'PETG-RED-MOCK', NULL, NULL),
+    ('透明PETG耗材 1kg (mock)', 'consumable', '3D耗材',
+     'a0000000-0000-0000-0000-000000000001', 0.5, '卷', 2, 35.99,
+     'in_stock', '{"material":"PETG","color":"transparent","diameter_mm":1.75,"weight_kg":1.0}', 'PETG-CLR-MOCK', NULL, NULL),
+    ('SFP+ 10G光模块 (mock)', 'consumable', '光纤',
+     'a0000000-0000-0000-0000-000000000002', 4, '个', 2, 45.00,
+     'in_stock', '{"speed":"10G","type":"SFP+","wavelength":"850nm"}', 'SFP-10G-MOCK', NULL, NULL),
+    ('Cat6A网线 5m (mock)', 'consumable', '网线',
+     'a0000000-0000-0000-0000-000000000002', 2, '条', 5, 8.99,
+     'in_stock', '{"length_m":5,"connector":"RJ45","speed":"10G","color":"green"}', 'CAT6A-5M-MOCK', NULL, NULL),
+    ('10kΩ电阻 0402 (mock)', 'consumable', '电子元器件',
+     'a0000000-0000-0000-0000-000000000006', 500, '片', 100, 0.02,
+     'in_stock', '{"package":"SMD-0402","value":"10kΩ","tolerance":"1%"}', 'RES-10K-MOCK', NULL, NULL),
+    ('100μF电容 (mock)', 'consumable', '电子元器件',
+     'a0000000-0000-0000-0000-000000000006', 50, '片', 80, 0.15,
+     'in_stock', '{"package":"SMD-0805","value":"100μF","voltage":"16V"}', 'CAP-100UF-MOCK', NULL, NULL),
+    ('太阳能MC4连接器 (mock)', 'consumable', '太阳能配件',
+     'a0000000-0000-0000-0000-000000000005', 8, '对', 10, 3.50,
+     'in_stock', '{"type":"MC4","rating":"30A","gender":"pair"}', 'MC4-PAIR-MOCK', NULL, 'Tundra后备箱'),
+    ('6AWG太阳能电缆 (mock)', 'consumable', '太阳能配件',
+     'a0000000-0000-0000-0000-000000000005', 15, 'm', 20, 2.80,
+     'in_stock', '{"gauge":"6AWG","color":"red/black","rating":"600V"}', 'CABLE-6AWG-MOCK', NULL, 'Tundra后备箱'),
+    ('RTX 4090 (mock)', 'asset', 'GPU', 'a0000000-0000-0000-0000-000000000004', 1, '个', NULL, 2199.00,
+     'in_service', '{"model":"RTX 4090","vram_gb":24,"tdp_w":450,"slot":"PCIe x16"}', 'GPU-4090-MOCK', '矿机#1主板', NULL),
+    ('RTX 3080 (mock)', 'asset', 'GPU', 'a0000000-0000-0000-0000-000000000004', 1, '个', NULL, 799.00,
+     'loaned', '{"model":"RTX 3080","vram_gb":10,"tdp_w":320,"slot":"PCIe x16"}', 'GPU-3080-MOCK', 'Mike-太阳能项目', NULL),
+    ('RTX 3070 (mock)', 'asset', 'GPU', NULL, 1, '个', NULL, 599.00,
+     'idle', '{"model":"RTX 3070","vram_gb":8,"tdp_w":220,"slot":"PCIe x16"}', 'GPU-3070-MOCK', NULL, 'Torrington仓库-待分配'),
+    ('Whatsminer M30S++ (mock)', 'asset', '矿机', 'a0000000-0000-0000-0000-000000000004', 1, '个', NULL, 3200.00,
+     'in_service', '{"hashrate":"112TH/s","algorithm":"SHA-256","psu_w":3472,"serial":"WM-M30S-001"}', 'MINER-M30S-MOCK', NULL, NULL),
+    ('Whatsminer M50 (mock)', 'asset', '矿机', NULL, 1, '个', NULL, 4500.00,
+     'damaged', '{"hashrate":"126TH/s","algorithm":"SHA-256","psu_w":3276,"serial":"WM-M50-001","damage_note":"PSU故障"}', 'MINER-M50-MOCK', NULL, '维修区'),
+    ('Ubiquiti USW-Pro-48 (mock)', 'asset', '网络设备', NULL, 1, '个', NULL, 699.00,
+     'in_service', '{"ports":48,"speed":"1G","poe":true,"mgmt":"UniFi"}', 'SW-USW48-MOCK', NULL, 'Torrington仓库-机柜'),
+    ('MikroTik CRS326 (mock)', 'asset', '网络设备', NULL, 1, '个', NULL, 269.00,
+     'loaned', '{"ports":24,"speed":"10G SFP+","mgmt":"RouterOS"}', 'SW-CRS326-MOCK', 'David-远程机房', NULL),
+    ('Dewalt DCD791 电钻 (mock)', 'asset', '电动工具',
+     'a0000000-0000-0000-0000-000000000003', 1, '个', NULL, 189.00,
+     'in_service', '{"voltage":"20V","brand":"Dewalt","battery_type":"DCB205"}', 'TOOL-DCD791-MOCK', NULL, 'Tundra工具箱'),
+    ('Dewalt DCF887 冲击钻 (mock)', 'asset', '电动工具',
+     'a0000000-0000-0000-0000-000000000003', 1, '个', NULL, 159.00,
+     'idle', '{"voltage":"20V","brand":"Dewalt","battery_type":"DCB203"}', 'TOOL-DCF887-MOCK', NULL, 'Tundra工具箱'),
+    ('Fluke 87V万用表 (mock)', 'asset', '电动工具', NULL, 1, '个', NULL, 425.00,
+     'loaned', '{"brand":"Fluke","model":"87V","type":"multimeter"}', 'TOOL-FLUKE-MOCK', 'Alex-现场测量', NULL),
+    ('Creality Ender-3 S1 (mock)', 'asset', '3D打印机', NULL, 1, '个', NULL, 399.00,
+     'in_service', '{"brand":"Creality","model":"Ender-3 S1","build_vol":"220x220x270mm"}', 'PRINTER-E3S1-MOCK', NULL, 'Torrington仓库-工作台'),
+    ('树莓派 4B 8GB (mock)', 'asset', '单板电脑', NULL, 1, '个', NULL, 75.00,
+     'retired', '{"model":"Raspberry Pi 4B","ram":"8GB","status_note":"SD卡槽损坏"}', 'SBC-RPI4-MOCK', NULL, '报废区')
+ON CONFLICT (barcode) DO NOTHING;

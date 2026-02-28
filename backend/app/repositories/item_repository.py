@@ -126,9 +126,14 @@ class ItemRepository:
         type_result = await self.db.execute(type_q)
         by_type = {row[0]: row[1] for row in type_result.all()}
 
+        status_q = select(Item.status, func.count()).group_by(Item.status)
+        status_result = await self.db.execute(status_q)
+        by_status = {row[0]: row[1] for row in status_result.all()}
+
         return {
             "total_items": total,
             "total_value": float(total_value),
             "by_category": by_category,
             "by_type": by_type,
+            "by_status": by_status,
         }

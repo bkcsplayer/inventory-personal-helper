@@ -18,7 +18,13 @@
     "lowStock": "Low Stock Alerts",
     "idleAssets": "Idle Assets",
     "loanedAssets": "Loaned Assets",
-    "byCategory": "By Category"
+    "byCategory": "By Category",
+    "totalValueDesc": "{{count}} categories",
+    "totalItemsDesc": "{{count}} types",
+    "lowStockDesc": "{{count}} need restock",
+    "loanedAssetsDesc": "{{loaned}} loaned, {{idle}} idle",
+    "assetStatus": "Asset Status",
+    "loanedAndIdle": "Loaned & Idle Assets"
   },
   "inventory": {
     "title": "Inventory Management",

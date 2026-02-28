@@ -5,6 +5,7 @@ import { adjustQuantity } from "@/services/items";
 import { useInventoryStore } from "@/stores/inventoryStore";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { fmtQty } from "@/lib/format";
 
 export interface QuickAdjustProps {
   itemId: string;
@@ -76,7 +77,7 @@ export function QuickAdjust({
           isLow && "text-destructive"
         )}
       >
-        {qty}
+        {fmtQty(qty)}
       </span>
       <span className="text-muted-foreground text-sm">{unit}</span>
       <Button

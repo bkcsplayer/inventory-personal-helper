@@ -33,6 +33,7 @@ import { createItem } from "@/services/items";
 import { QuickAdjust } from "@/components/inventory/QuickAdjust";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { fmtQty } from "@/lib/format";
 import type { Item } from "@/types";
 
 const STATUSES = [
@@ -52,6 +53,30 @@ const STATUS_BADGE_CLASS: Record<string, string> = {
   damaged: "bg-red-500/15 text-red-700 dark:text-red-400 border-red-500/30",
   retired: "bg-gray-500/15 text-gray-600 dark:text-gray-400 border-gray-500/30",
 };
+
+const DEFAULT_CATEGORIES = [
+  "GPU", "矿机", "网线", "光纤", "3D耗材", "电子元器件",
+  "电动工具", "太阳能配件", "网络设备", "单板电脑", "3D打印机",
+];
+
+const UNIT_OPTIONS = ["个", "卷", "条", "片", "kg", "m"];
+
+const LS_KEY = "nexus_categories";
+
+function loadCategories(): string[] {
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch { /* ignore */ }
+  return [...DEFAULT_CATEGORIES];
+}
+
+function saveCategories(cats: string[]) {
+  localStorage.setItem(LS_KEY, JSON.stringify(cats));
+}
 
 function StatusBadge({ status }: { status: string }) {
   const { t } = useTranslation();
@@ -84,6 +109,32 @@ function useDebouncedCallback<T extends unknown[]>(
   );
 }
 
+interface AddFormState {
+  name: string;
+  category: string;
+  item_type: "consumable" | "asset";
+  quantity: number;
+  unit: string;
+  min_stock: number;
+  unit_price: string;
+  status: string;
+  barcode: string;
+  location_note: string;
+}
+
+const EMPTY_FORM: AddFormState = {
+  name: "",
+  category: "",
+  item_type: "consumable",
+  quantity: 1,
+  unit: "个",
+  min_stock: 0,
+  unit_price: "",
+  status: "in_stock",
+  barcode: "",
+  location_note: "",
+};
+
 export default function Inventory() {
   const { t } = useTranslation();
   const { toast } = useToast();
@@ -101,16 +152,11 @@ export default function Inventory() {
   } = useInventoryStore();
 
   const [searchInput, setSearchInput] = useState(filters.search ?? "");
-  const [categoryInput, setCategoryInput] = useState(filters.category ?? "");
+  const [filterCategoryInput, setFilterCategoryInput] = useState(filters.category ?? "");
   const [addOpen, setAddOpen] = useState(false);
-  const [addForm, setAddForm] = useState({
-    name: "",
-    category: "",
-    item_type: "consumable" as "consumable" | "asset",
-    quantity: 1,
-    unit: "个",
-    status: "in_stock",
-  });
+  const [addForm, setAddForm] = useState<AddFormState>({ ...EMPTY_FORM });
+  const [allCategories, setAllCategories] = useState<string[]>(loadCategories);
+  const [categoryInput, setCategoryInput] = useState("");
 
   const debouncedSearch = useDebouncedCallback((value: string) => {
     setFilter({ search: value || undefined });
@@ -125,7 +171,7 @@ export default function Inventory() {
   }, [fetchItems]);
 
   useEffect(() => {
-    setCategoryInput(filters.category ?? "");
+    setFilterCategoryInput(filters.category ?? "");
   }, [filters.category]);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -135,6 +181,18 @@ export default function Inventory() {
   };
 
   const pages = Math.max(1, Math.ceil(total / pageSize));
+
+  const addCategory = () => {
+    const trimmed = categoryInput.trim();
+    if (!trimmed) return;
+    setAddForm((prev) => ({ ...prev, category: trimmed }));
+    if (!allCategories.includes(trimmed)) {
+      const updated = [...allCategories, trimmed];
+      setAllCategories(updated);
+      saveCategories(updated);
+    }
+    setCategoryInput("");
+  };
 
   const handleAddItem = async () => {
     if (!addForm.name.trim() || !addForm.category.trim()) {
@@ -146,18 +204,31 @@ export default function Inventory() {
       return;
     }
     try {
-      const payload: Partial<Item> = {
+      const payload: Record<string, unknown> = {
         name: addForm.name.trim(),
         category: addForm.category.trim(),
         item_type: addForm.item_type,
         quantity: addForm.quantity,
         unit: addForm.unit,
-        status: addForm.status as Item["status"],
+        status: addForm.status,
       };
+      if (addForm.item_type === "consumable" && addForm.min_stock > 0) {
+        payload.min_stock = addForm.min_stock;
+      }
+      if (addForm.unit_price) {
+        payload.unit_price = parseFloat(addForm.unit_price);
+      }
+      if (addForm.barcode.trim()) {
+        payload.barcode = addForm.barcode.trim();
+      }
+      if (addForm.location_note.trim()) {
+        payload.location_note = addForm.location_note.trim();
+      }
       await createItem(payload);
       setAddOpen(false);
-      setAddForm({ name: "", category: "", item_type: "consumable", quantity: 1, unit: "个", status: "in_stock" });
-      fetchItems();
+      setAddForm({ ...EMPTY_FORM });
+      setCategoryInput("");
+      await fetchItems();
       toast({ title: "Item created" });
     } catch {
       toast({
@@ -200,10 +271,10 @@ export default function Inventory() {
         </Select>
         <Input
           placeholder={t("inventory.category")}
-          value={categoryInput}
+          value={filterCategoryInput}
           onChange={(e) => {
             const v = e.target.value;
-            setCategoryInput(v);
+            setFilterCategoryInput(v);
             debouncedCategory(v);
           }}
           className="w-[140px]"
@@ -234,11 +305,12 @@ export default function Inventory() {
               {t("inventory.addItem")}
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="sm:max-w-lg">
             <DialogHeader>
               <DialogTitle>{t("item.createTitle", "Create New Item")}</DialogTitle>
             </DialogHeader>
             <div className="grid gap-4 py-4">
+              {/* Name */}
               <div className="grid gap-2">
                 <Label>{t("item.name")}</Label>
                 <Input
@@ -247,31 +319,79 @@ export default function Inventory() {
                   placeholder={t("item.name")}
                 />
               </div>
+
+              {/* Category tag selector */}
               <div className="grid gap-2">
                 <Label>{t("inventory.category")}</Label>
-                <Input
-                  value={addForm.category}
-                  onChange={(e) => setAddForm((p) => ({ ...p, category: e.target.value }))}
-                  placeholder={t("inventory.category")}
-                />
+                <div className="flex gap-2">
+                  <Input
+                    value={categoryInput}
+                    onChange={(e) => setCategoryInput(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addCategory(); } }}
+                    placeholder="输入新分类..."
+                    className="flex-1"
+                  />
+                  <Button type="button" variant="outline" size="sm" onClick={addCategory}>+</Button>
+                </div>
+                <div className="flex flex-wrap gap-1.5 mt-1">
+                  {allCategories.map((cat) => (
+                    <button
+                      key={cat}
+                      type="button"
+                      onClick={() => setAddForm(prev => ({ ...prev, category: cat }))}
+                      className={cn(
+                        "rounded-full px-3 py-1 text-xs font-medium border transition-colors",
+                        addForm.category === cat
+                          ? "bg-primary text-primary-foreground border-primary"
+                          : "bg-secondary/50 text-secondary-foreground border-border hover:bg-secondary"
+                      )}
+                    >
+                      {cat}
+                    </button>
+                  ))}
+                </div>
               </div>
-              <div className="grid gap-2">
-                <Label>{t("item.itemType", "Item Type")}</Label>
-                <Select
-                  value={addForm.item_type}
-                  onValueChange={(v: "consumable" | "asset") =>
-                    setAddForm((p) => ({ ...p, item_type: v }))
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="consumable">{t("inventory.consumable")}</SelectItem>
-                    <SelectItem value="asset">{t("inventory.asset")}</SelectItem>
-                  </SelectContent>
-                </Select>
+
+              {/* Item type & Status */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label>{t("item.itemType", "Item Type")}</Label>
+                  <Select
+                    value={addForm.item_type}
+                    onValueChange={(v: "consumable" | "asset") =>
+                      setAddForm((p) => ({ ...p, item_type: v }))
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="consumable">{t("inventory.consumable")}</SelectItem>
+                      <SelectItem value="asset">{t("inventory.asset")}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid gap-2">
+                  <Label>{t("inventory.status")}</Label>
+                  <Select
+                    value={addForm.status}
+                    onValueChange={(v) => setAddForm((p) => ({ ...p, status: v }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {STATUSES.map((s) => (
+                        <SelectItem key={s} value={s}>
+                          {t(`status.${s}`)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
+
+              {/* Quantity & Unit */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
                   <Label>{t("inventory.quantity")}</Label>
@@ -286,29 +406,70 @@ export default function Inventory() {
                 </div>
                 <div className="grid gap-2">
                   <Label>{t("item.unit")}</Label>
-                  <Input
+                  <Select
                     value={addForm.unit}
-                    onChange={(e) => setAddForm((p) => ({ ...p, unit: e.target.value }))}
+                    onValueChange={(v) => setAddForm((p) => ({ ...p, unit: v }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {UNIT_OPTIONS.map((u) => (
+                        <SelectItem key={u} value={u}>{u}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Min stock (consumable only) & Unit price */}
+              <div className="grid grid-cols-2 gap-4">
+                {addForm.item_type === "consumable" && (
+                  <div className="grid gap-2">
+                    <Label>{t("item.minStock", "Min Stock")}</Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      value={addForm.min_stock}
+                      onChange={(e) =>
+                        setAddForm((p) => ({ ...p, min_stock: Number(e.target.value) || 0 }))
+                      }
+                    />
+                  </div>
+                )}
+                <div className="grid gap-2">
+                  <Label>{t("item.unitPrice", "Unit Price")}</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    value={addForm.unit_price}
+                    onChange={(e) =>
+                      setAddForm((p) => ({ ...p, unit_price: e.target.value }))
+                    }
+                    placeholder="0.00"
                   />
                 </div>
               </div>
-              <div className="grid gap-2">
-                <Label>{t("inventory.status")}</Label>
-                <Select
-                  value={addForm.status}
-                  onValueChange={(v) => setAddForm((p) => ({ ...p, status: v }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {STATUSES.map((s) => (
-                      <SelectItem key={s} value={s}>
-                        {t(`status.${s}`)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+
+              {/* Barcode & Location */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label>{t("item.barcode", "Barcode")}</Label>
+                  <Input
+                    value={addForm.barcode}
+                    onChange={(e) => setAddForm((p) => ({ ...p, barcode: e.target.value }))}
+                    placeholder={t("item.barcode", "Barcode")}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label>{t("item.locationNote", "Location Note")}</Label>
+                  <Input
+                    value={addForm.location_note}
+                    onChange={(e) => setAddForm((p) => ({ ...p, location_note: e.target.value }))}
+                    placeholder={t("item.locationNote", "Location Note")}
+                  />
+                </div>
               </div>
             </div>
             <DialogFooter>
@@ -359,7 +520,7 @@ export default function Inventory() {
                         />
                       ) : (
                         <span className="tabular-nums">
-                          {item.quantity} {item.unit ?? ""}
+                          {fmtQty(item.quantity)} {item.unit ?? ""}
                         </span>
                       )}
                     </TableCell>

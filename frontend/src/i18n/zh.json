@@ -1,13 +1,110 @@
 {
-  "app": {"title": "Nexus EAM"},
-  "nav": {"dashboard": "仪表盘","inventory": "库存管理","assets": "固定资产","containers": "收纳容器","reports": "报表统计","scan": "扫码","login": "登录","logout": "退出"},
-  "dashboard": {"totalValue": "资产总值","totalItems": "物品总数","lowStock": "低库存预警","idleAssets": "闲置资产","loanedAssets": "外借资产","byCategory": "按类别"},
-  "inventory": {"title": "库存管理","search": "搜索物品...","addItem": "新增物品","type": "类型","category": "分类","status": "状态","quantity": "数量","allTypes": "所有类型","consumable": "消耗品","asset": "固定资产","allStatuses": "全部状态","page": "页","pageSize": "每页","prev": "上一页","next": "下一页"},
-  "item": {"name": "名称","sku": "编号/序列号","unit": "单位","unitPrice": "单价","minStock": "最低库存","location": "位置说明","assignedTo": "指派/外借给","barcode": "条形码","purchaseDate": "购入日期","attributes": "动态属性","restockUrl": "复购链接","createTitle": "新建物品","itemType": "物品类型"},
-  "container": {"title": "收纳容器","addContainer": "新增容器","name": "名称","location": "位置","qrCode": "二维码","items": "容器内物品","empty": "空容器"},
-  "status": {"in_stock": "库存中","in_service": "服役中","idle": "闲置","loaned": "外借","damaged": "损坏","retired": "已报废"},
-  "reports": {"title": "报表统计","lowStock": "低库存","idle": "闲置资产","loaned": "外借","summary": "汇总"},
-  "auth": {"login": "登录","username": "用户名","password": "密码","loginFailed": "登录失败","register": "注册","email": "邮箱"},
-  "common": {"save": "保存","cancel": "取消","delete": "删除","edit": "编辑","actions": "操作","loading": "加载中...","noData": "暂无数据","confirm": "确认"},
-  "assets": {"title": "固定资产","filterCategory": "分类","filterStatus": "状态","expandTopology": "展开拓扑","collapseTopology": "收起拓扑"}
+  "app": {
+    "title": "Nexus EAM"
+  },
+  "nav": {
+    "dashboard": "仪表盘",
+    "inventory": "库存管理",
+    "assets": "固定资产",
+    "containers": "收纳容器",
+    "reports": "报表统计",
+    "scan": "扫码",
+    "login": "登录",
+    "logout": "退出"
+  },
+  "dashboard": {
+    "totalValue": "资产总值",
+    "totalItems": "物品总数",
+    "lowStock": "低库存预警",
+    "idleAssets": "闲置资产",
+    "loanedAssets": "外借资产",
+    "byCategory": "按类别",
+    "totalValueDesc": "{{count}} 个分类",
+    "totalItemsDesc": "{{count}} 种类型",
+    "lowStockDesc": "{{count}} 项需补货",
+    "loanedAssetsDesc": "{{loaned}} 外借，{{idle}} 闲置",
+    "assetStatus": "资产状态",
+    "loanedAndIdle": "外借与闲置资产"
+  },
+  "inventory": {
+    "title": "库存管理",
+    "search": "搜索物品...",
+    "addItem": "新增物品",
+    "type": "类型",
+    "category": "分类",
+    "status": "状态",
+    "quantity": "数量",
+    "allTypes": "所有类型",
+    "consumable": "消耗品",
+    "asset": "固定资产",
+    "allStatuses": "全部状态",
+    "page": "页",
+    "pageSize": "每页",
+    "prev": "上一页",
+    "next": "下一页"
+  },
+  "item": {
+    "name": "名称",
+    "sku": "编号/序列号",
+    "unit": "单位",
+    "unitPrice": "单价",
+    "minStock": "最低库存",
+    "location": "位置说明",
+    "assignedTo": "指派/外借给",
+    "barcode": "条形码",
+    "purchaseDate": "购入日期",
+    "attributes": "动态属性",
+    "restockUrl": "复购链接",
+    "createTitle": "新建物品",
+    "itemType": "物品类型"
+  },
+  "container": {
+    "title": "收纳容器",
+    "addContainer": "新增容器",
+    "name": "名称",
+    "location": "位置",
+    "qrCode": "二维码",
+    "items": "容器内物品",
+    "empty": "空容器"
+  },
+  "status": {
+    "in_stock": "库存中",
+    "in_service": "服役中",
+    "idle": "闲置",
+    "loaned": "外借",
+    "damaged": "损坏",
+    "retired": "已报废"
+  },
+  "reports": {
+    "title": "报表统计",
+    "lowStock": "低库存",
+    "idle": "闲置资产",
+    "loaned": "外借",
+    "summary": "汇总"
+  },
+  "auth": {
+    "login": "登录",
+    "username": "用户名",
+    "password": "密码",
+    "loginFailed": "登录失败",
+    "register": "注册",
+    "email": "邮箱"
+  },
+  "common": {
+    "save": "保存",
+    "cancel": "取消",
+    "delete": "删除",
+    "edit": "编辑",
+    "actions": "操作",
+    "loading": "加载中...",
+    "noData": "暂无数据",
+    "confirm": "确认"
+  },
+  "assets": {
+    "title": "固定资产",
+    "filterCategory": "分类",
+    "filterStatus": "状态",
+    "expandTopology": "展开拓扑",
+    "collapseTopology": "收起拓扑"
+  }
 }

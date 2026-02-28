@@ -8,6 +8,7 @@ import {
   type SummaryData,
 } from "@/services/reports";
 import type { Item } from "@/types";
+import { fmtQty } from "@/lib/format";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table,
@@ -102,8 +103,8 @@ export default function Reports() {
                     lowStock.map((item) => (
                       <TableRow key={item.id}>
                         <TableCell className="font-medium">{item.name}</TableCell>
-                        <TableCell>{item.quantity}</TableCell>
-                        <TableCell>{minStock(item) ?? "-"}</TableCell>
+                        <TableCell>{fmtQty(item.quantity)}</TableCell>
+                        <TableCell>{minStock(item) != null ? fmtQty(minStock(item)) : "-"}</TableCell>
                         <TableCell>{item.unit ?? "-"}</TableCell>
                       </TableRow>
                     ))
@@ -144,7 +145,7 @@ export default function Reports() {
                         <TableCell>
                           <Badge variant="secondary">{item.status}</Badge>
                         </TableCell>
-                        <TableCell>{item.quantity}</TableCell>
+                        <TableCell>{fmtQty(item.quantity)}</TableCell>
                       </TableRow>
                     ))
                   )}

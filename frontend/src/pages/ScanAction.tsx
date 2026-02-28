@@ -5,6 +5,7 @@ import api from "@/services/api";
 import { adjustQuantity } from "@/services/items";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { fmtQty } from "@/lib/format";
 
 interface ScanItem {
   id: string;
@@ -107,7 +108,7 @@ export default function ScanAction() {
               <div className="min-w-0 flex-1">
                 <p className="truncate text-lg font-medium">{item.name}</p>
                 <p className="text-muted-foreground">
-                  {item.quantity} {item.unit ?? ""}
+                  {fmtQty(item.quantity)} {item.unit ?? ""}
                 </p>
               </div>
               <div className="flex shrink-0 items-center gap-2">
