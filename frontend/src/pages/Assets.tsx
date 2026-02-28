@@ -19,6 +19,7 @@ import {
 import { useInventoryStore } from "@/stores/inventoryStore";
 import { getTopology, type TopologyNode } from "@/services/topology";
 import { cn } from "@/lib/utils";
+import { ItemThumbnail, ImageLightbox } from "@/components/ui/image-lightbox";
 
 const STATUSES = [
   "in_stock",
@@ -98,6 +99,7 @@ export default function Assets() {
   const [topology, setTopology] = useState<TopologyNode | null>(null);
   const [loadingTopology, setLoadingTopology] = useState(false);
   const [categoryInput, setCategoryInput] = useState(filters.category ?? "");
+  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
 
   useEffect(() => {
     setFilter({ itemType: "asset" });
@@ -177,52 +179,79 @@ export default function Assets() {
               <Card
                 key={item.id}
                 className={cn(
-                  "cursor-pointer transition-colors hover:border-primary/50",
+                  "cursor-pointer overflow-hidden transition-all hover:border-primary/50 hover:shadow-md",
                   isExpanded && "ring-2 ring-primary"
                 )}
-                onClick={() => handleCardClick(String(item.id))}
               >
-                <CardHeader className="pb-2">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0 flex-1">
+                <div className="flex">
+                  <button
+                    type="button"
+                    className="shrink-0"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (item.image_url) setLightboxSrc(item.image_url);
+                    }}
+                  >
+                    {item.image_url ? (
+                      <img
+                        src={item.image_url}
+                        alt={item.name}
+                        className="h-[120px] w-[120px] object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-[120px] w-[120px] items-center justify-center bg-muted">
+                        <ItemThumbnail src={null} size={48} />
+                      </div>
+                    )}
+                  </button>
+                  <div
+                    className="flex min-w-0 flex-1 flex-col p-3"
+                    onClick={() => handleCardClick(String(item.id))}
+                  >
+                    <div className="flex items-start justify-between gap-2">
                       <h3 className="font-semibold truncate">{item.name}</h3>
-                      <p className="text-sm text-muted-foreground truncate">
-                        {item.category ?? "-"}
+                      <StatusBadge status={item.status} />
+                    </div>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      {item.category ?? "-"} &middot; {t("item.sku")}: {sku(item)}
+                    </p>
+                    {Object.entries(attrs(item)).length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-x-3 gap-y-0.5 text-xs">
+                        {Object.entries(attrs(item)).slice(0, 4).map(([k, v]) => (
+                          <span key={k}>
+                            <span className="text-muted-foreground">{k}:</span>{" "}
+                            {String(v)}
+                          </span>
+                        ))}
+                        {Object.entries(attrs(item)).length > 4 && (
+                          <span className="text-muted-foreground">
+                            +{Object.entries(attrs(item)).length - 4}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    {item.assigned_to && (
+                      <p className="mt-1 text-xs text-purple-600 dark:text-purple-400">
+                        {t("item.assignedTo")}: {item.assigned_to}
                       </p>
-                    </div>
-                    <StatusBadge status={item.status} />
+                    )}
                   </div>
-                </CardHeader>
-                <CardContent className="space-y-2 pt-0">
-                  <div className="text-xs text-muted-foreground">
-                    {t("item.sku")}: {sku(item)}
+                </div>
+                {isExpanded && (
+                  <div className="border-t px-4 py-3">
+                    {loadingTopology ? (
+                      <div className="text-sm text-muted-foreground">
+                        {t("common.loading")}
+                      </div>
+                    ) : topology ? (
+                      <TopologyTree node={topology} />
+                    ) : (
+                      <div className="text-sm text-muted-foreground">
+                        {t("common.noData")}
+                      </div>
+                    )}
                   </div>
-                  {Object.entries(attrs(item)).length > 0 && (
-                    <div className="space-y-1 text-sm">
-                      {Object.entries(attrs(item)).map(([k, v]) => (
-                        <div key={k} className="flex gap-2">
-                          <span className="text-muted-foreground">{k}:</span>
-                          <span>{String(v)}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  {isExpanded && (
-                    <div className="mt-4 pt-4 border-t">
-                      {loadingTopology ? (
-                        <div className="text-sm text-muted-foreground">
-                          {t("common.loading")}
-                        </div>
-                      ) : topology ? (
-                        <TopologyTree node={topology} />
-                      ) : (
-                        <div className="text-sm text-muted-foreground">
-                          {t("common.noData")}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </CardContent>
+                )}
               </Card>
             );
           })}
@@ -234,6 +263,12 @@ export default function Assets() {
           {t("common.noData")}
         </div>
       )}
+
+      <ImageLightbox
+        src={lightboxSrc ?? ""}
+        open={!!lightboxSrc}
+        onClose={() => setLightboxSrc(null)}
+      />
     </div>
   );
 }
